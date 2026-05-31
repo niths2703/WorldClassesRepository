@@ -3,10 +3,7 @@ package com.example.WorldClassesBooking.Service.Impl;
 import com.example.WorldClassesBooking.DTOs.request.parent.AvailableOfferingsRequest;
 import com.example.WorldClassesBooking.DTOs.request.parent.BookOfferingRequest;
 import com.example.WorldClassesBooking.DTOs.request.parent.ViewBookingsRequest;
-import com.example.WorldClassesBooking.DTOs.response.parent.AvailableOfferingsResponse;
-import com.example.WorldClassesBooking.DTOs.response.parent.BookOfferingResponse;
-import com.example.WorldClassesBooking.DTOs.response.parent.SessionResponse;
-import com.example.WorldClassesBooking.DTOs.response.parent.ViewBookingsResponse;
+import com.example.WorldClassesBooking.DTOs.response.parent.*;
 import com.example.WorldClassesBooking.Entity.Booking;
 import com.example.WorldClassesBooking.Entity.Offering;
 import com.example.WorldClassesBooking.Entity.Parent;
@@ -50,7 +47,10 @@ public class ParentServiceImpl implements ParentService {
                 .offeringList(offeringList).build();
     }
 
-    public ViewBookingsResponse viewMyBookings(ViewBookingsRequest request) {
+    @Override
+    public ViewBookingsResponse viewMyBookings(
+            ViewBookingsRequest request) {
+
         Parent parent = parentRepository
                 .findByNameAndMobile(
                         request.getParentName(),
@@ -59,10 +59,40 @@ public class ParentServiceImpl implements ParentService {
                         new InvalidUserException(
                                 "Parent not found"));
 
-        List<Booking> bookings= bookingRepository.findByParentId(
-                parent.getId());
+        List<BookingResponse> bookingResponses =
+                bookingRepository.findByParentId(parent.getId())
+                        .stream()
+                        .map(booking -> {
 
-        return ViewBookingsResponse.builder().bookingList(bookings).build();
+                            ZoneId zoneId =
+                                    ZoneId.of(
+                                            booking.getParent()
+                                                    .getTimezone());
+
+                            return BookingResponse.builder()
+                                    .bookingId(
+                                            booking.getId())
+                                    .bookingTime(
+                                            booking.getBookingTime()
+                                                    .atZone(zoneId))
+                                    .course(
+                                            booking.getOffering()
+                                                    .getCourse()
+                                                    .getName())
+                                    .offering(
+                                            booking.getOffering()
+                                                    .getName())
+                                    .teacher(
+                                            booking.getOffering()
+                                                    .getTeacher()
+                                                    .getName())
+                                    .build();
+                        })
+                        .toList();
+
+        return ViewBookingsResponse.builder()
+                .bookingList(bookingResponses)
+                .build();
     }
 
     @Transactional

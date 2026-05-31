@@ -13,5 +13,7 @@ import java.util.List;
 @NoArgsConstructor
 @Builder
 public class ViewBookingsResponse {
-    List<Booking> bookingList;
+    List<BookingResponse> bookingList;
+
+
 }
